@@ -1,4 +1,3 @@
-// app/page.tsx
 'use client';
 import { useState } from 'react';
 import { FaDollarSign, FaSearch, FaClock } from 'react-icons/fa';
