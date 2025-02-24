@@ -1,7 +1,7 @@
+// app/page.tsx
 'use client';
-import { useState } from 'react';
-import { FaDollarSign, FaSearch, FaClock } from 'react-icons/fa';
-
+import { useState, useEffect } from 'react';
+import { FaDollarSign, FaReceipt, FaArrowLeft, FaLock, FaPrint, FaClock } from 'react-icons/fa';
 
 interface Transaction {
   id: number;
@@ -11,24 +11,42 @@ interface Transaction {
   type: 'deposit' | 'withdraw';
 }
 
-export default function Home() {
+export default function ATMScreen() {
   const [balance, setBalance] = useState(2500.0);
   const [amount, setAmount] = useState('');
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    { id: 1, date: '2025-02-23', description: 'Initial deposit', amount: 2500.0, type: 'deposit' },
-  ]);
-  const [searchDate, setSearchDate] = useState('');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [screen, setScreen] = useState<'main' | 'withdraw' | 'deposit' | 'transactions' | 'receipt'>('main');
+  const [loading, setLoading] = useState(false);
 
-  const handleTransaction = (type: 'deposit' | 'withdraw') => {
+  useEffect(() => {
+    // Initial transactions
+    setTransactions([
+      { 
+        id: 1, 
+        date: new Date().toISOString().split('T')[0], 
+        description: 'Initial deposit', 
+        amount: 2500.0, 
+        type: 'deposit' 
+      },
+    ]);
+  }, []);
+
+  const handleTransaction = async (type: 'deposit' | 'withdraw') => {
     const numericAmount = parseFloat(amount);
     if (!numericAmount || numericAmount <= 0) return;
 
+    setLoading(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     const newBalance = type === 'deposit' 
       ? balance + numericAmount 
       : balance - numericAmount;
 
     if (type === 'withdraw' && newBalance < 0) {
       alert('Insufficient funds');
+      setLoading(false);
       return;
     }
 
@@ -40,106 +58,125 @@ export default function Home() {
       amount: numericAmount,
       type
     }, ...transactions]);
+    
     setAmount('');
+    setLoading(false);
+    setScreen('main');
   };
 
-  const filteredTransactions = searchDate
-    ? transactions.filter(t => t.date === searchDate)
-    : transactions;
+  const renderMainScreen = () => (
+    <div className="space-y-6 w-full">
+      {/* Balance Card */}
+      <div className="bg-blue-900/30 p-6 rounded-2xl shadow-lg">
+        <div className="flex items-center gap-4 text-2xl">
+          <FaLock className="text-blue-400" />
+          <span>**** 1234</span>
+        </div>
+        <div className="mt-6 flex items-center gap-4">
+          <FaDollarSign className="text-4xl text-blue-400" />
+          <div>
+            <p className="text-gray-400">Available Balance</p>
+            <p className="text-4xl font-bold">${balance.toFixed(2)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Transaction Options */}
+      <div className="grid grid-cols-2 gap-4 w-full">
+        <button 
+          onClick={() => setScreen('withdraw')}
+          className="bg-blue-900/30 hover:bg-blue-900/50 p-6 rounded-xl flex flex-col items-center gap-2 transition-colors"
+        >
+          <FaDollarSign className="text-3xl" />
+          <span>Withdraw Cash</span>
+        </button>
+        <button
+          onClick={() => setScreen('deposit')}
+          className="bg-blue-900/30 hover:bg-blue-900/50 p-6 rounded-xl flex flex-col items-center gap-2 transition-colors"
+        >
+          <FaReceipt className="text-3xl" />
+          <span>Deposit Funds</span>
+        </button>
+      </div>
+
+      {/* Bottom Navigation */}
+      <div className="flex justify-between gap-4 w-full">
+        <button 
+          onClick={() => setScreen('transactions')}
+          className="text-blue-400 hover:text-blue-300 flex items-center gap-2 px-4 py-2"
+        >
+          <FaClock />
+          Recent Transactions
+        </button>
+        <button 
+          onClick={() => setScreen('receipt')}
+          className="text-blue-400 hover:text-blue-300 flex items-center gap-2 px-4 py-2"
+        >
+          <FaPrint />
+          Print Receipt
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderTransactionScreen = () => (
+    <div className="space-y-6 w-full">
+      <button 
+        onClick={() => setScreen('main')}
+        className="text-blue-400 hover:text-blue-300 flex items-center gap-2"
+      >
+        <FaArrowLeft />
+        Back to Main
+      </button>
+
+      <div className="bg-blue-900/30 p-6 rounded-2xl w-full">
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="Enter amount"
+          className="w-full bg-transparent text-2xl py-4 px-6 border-b-2 border-blue-400 focus:outline-none"
+        />
+      </div>
+
+      <div className="grid grid-cols-3 gap-4 w-full">
+        {['20', '50', '100', '200', '500', 'Other'].map((value) => (
+          <button
+            key={value}
+            onClick={() => value === 'Other' ? null : setAmount(value)}
+            className="bg-blue-900/30 hover:bg-blue-900/50 p-4 rounded-xl text-center transition-colors"
+          >
+            ${value}
+          </button>
+        ))}
+      </div>
+
+      <button
+        onClick={() => handleTransaction(screen === 'withdraw' ? 'withdraw' : 'deposit')}
+        className="w-full bg-blue-500 hover:bg-blue-600 py-4 rounded-xl font-bold transition-colors"
+        disabled={loading}
+      >
+        {loading ? 'Processing...' : 'Confirm Transaction'}
+      </button>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-blue-900 text-white">
-      <header className="p-6 border-b border-blue-800">
-        <h1 className="text-3xl font-bold">NextBank ATM</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-blue-900 text-white p-6 w-screen">
+      <header className="mb-8 flex justify-between items-center w-full">
+        <h1 className="text-2xl font-bold">NextBank ATM</h1>
+        <div className="text-gray-400">{new Date().toLocaleTimeString()}</div>
       </header>
 
-      <main className="container mx-auto p-6">
-        {/* Balance Card */}
-        <div className="bg-blue-800/30 backdrop-blur-lg rounded-2xl p-6 mb-8 shadow-xl">
-          <div className="flex items-center gap-4">
-            <FaDollarSign className="text-3xl text-blue-400" />
-            <div>
-              <p className="text-gray-400">Current Balance</p>
-              <p className="text-4xl font-bold">${balance.toFixed(2)}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Transaction Form */}
-        <div className="max-w-screen-md mx-auto"> 
-         
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="Enter amount"
-         className="w-full bg-gray-600/50 rounded-lg py-2 px-4  focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-
-         <div className="flex gap-14 mt-4">
-  <button
-    onClick={() => handleTransaction('deposit')}
-    className="flex-1 text-green-100 font-bold text-shadow-black bg-green-600 border-6 border-green-500 
-            rounded-lg py-4 mt-2.5 mr-7.5 mb-12 shadow-atm
-             hover:scale-125 transition-transform duration-300 active:bg-green-800 "
-  >
-    Deposit
-  </button>
-  <button
-    onClick={() => handleTransaction('withdraw')}
-    className="flex-1 text-red-100 font-bold text-shadow-black bg-red-600 border-6 border-red-500
-             rounded-lg py-4 mt-2.5 mr-7.5 mb-12 shadow-atm
-             hover:scale-125 transition-transform duration-300 active:bg-red-800"
-  >
-    Withdraw
-  </button>
-</div>
-
-        </div>
-
-     
-
-        {/* Transaction History */}
-        <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 shadow-xl">
-          
-
-
-          <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-            <FaClock /> Transaction History
-          </h2>
-          
-   {/* Transaction Search */}
-   <div className="mb-6 flex items-center gap-4 bg-gray-700/50 p-4 rounded-lg">
-          <FaSearch className="text-gray-400" />
-          <input
-            type="date"
-            value={searchDate}
-            onChange={(e) => setSearchDate(e.target.value)}
-            className="bg-transparent outline-none flex-1"
-            placeholder="Search by date..."
-          />
-        </div>
-
-          <div className="space-y-4">
-            {filteredTransactions.map((transaction) => (
-              <div 
-                key={transaction.id}
-                className="p-4 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors"
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold">{transaction.description}</p>
-                    <p className="text-sm text-gray-400">{transaction.date}</p>
-                  </div>
-                  <span className={`text-lg ${transaction.type === 'deposit' ? 'text-green-400' : 'text-red-400'}`}>
-                    {transaction.type === 'deposit' ? '+' : '-'}${transaction.amount.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <main className="space-y-8 w-full">
+        {screen === 'main' ? renderMainScreen() : renderTransactionScreen()}
       </main>
+
+      {loading && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+        </div>
+      )}
     </div>
   );
 }
