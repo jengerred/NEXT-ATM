@@ -2,9 +2,6 @@
 import { useState } from 'react';
 import { FaDollarSign, FaSearch, FaClock } from 'react-icons/fa';
 
-export const config = {
-  runtime: 'nodejs', // Specify that this API route uses the Node.js runtime instead of Edge.
-};
 
 interface Transaction {
   id: number;
