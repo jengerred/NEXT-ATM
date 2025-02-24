@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import { FaDollarSign, FaSearch, FaClock } from 'react-icons/fa';
 
+export const config = {
+  runtime: 'nodejs', // Specify that this API route uses the Node.js runtime instead of Edge.
+};
+
 interface Transaction {
   id: number;
   date: string;
@@ -76,7 +80,7 @@ export default function Home() {
          className="w-full bg-gray-600/50 rounded-lg py-2 px-4  focus:ring-2 focus:ring-blue-500 outline-none"
           />
 
-         <div className="flex gap-14 mt-4 ">
+         <div className="flex gap-14 mt-4">
   <button
     onClick={() => handleTransaction('deposit')}
     className="flex-1 text-green-100 font-bold text-shadow-black bg-green-600 border-6 border-green-500 
